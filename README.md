@@ -1,0 +1,3 @@
+# recuruit_config
+
+recuruitのconfig用リポジトリ
