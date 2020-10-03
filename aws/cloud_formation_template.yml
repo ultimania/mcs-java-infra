@@ -1,0 +1,387 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  projectName:
+    Type: String
+    Default: test
+  EC2KeyPair:
+    Type: 'AWS::EC2::KeyPair::KeyName'
+Resources:
+  vpc:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub '${projectName}-vpc'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+  internetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${projectName}-igw'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: d707b83f-d876-4ad0-9d08-0948d2980345
+  igwAttachVpc:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      InternetGatewayId: !Ref internetGateway
+      VpcId: !Ref vpc
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 98023e76-a49c-4685-9963-6548e8af3092
+  publicSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref vpc
+      AvailabilityZone: us-east-2a
+      CidrBlock: 10.0.0.0/24
+      MapPublicIpOnLaunch: 'true'
+      Tags:
+        - Key: Name
+          Value: !Sub '${projectName}-public-subnet01'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 5660af47-8c08-4c3d-811a-99c81288b017
+  publicSubnet2:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref vpc
+      AvailabilityZone: us-east-2c
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: 'true'
+      Tags:
+        - Key: Name
+          Value: !Sub '${projectName}-public-subnet02'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 10ecf055-e2ac-4122-a431-b3aa5aed7620
+  publicRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${projectName}-public-rtb'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: ea36478e-bd35-434b-9bf0-fbbddeb48a60
+  routeAddInternet:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref internetGateway
+      RouteTableId: !Ref publicRouteTable
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 1a99ef3f-6d06-4d50-8434-9683d3a8db03
+  associatePublicSubnet1ToPublicRouteTable:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref publicRouteTable
+      SubnetId: !Ref publicSubnet1
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 740f3d29-6d90-4616-9900-f7803e4949e1
+  associatePublicSubnet2ToPublicRouteTable:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref publicRouteTable
+      SubnetId: !Ref publicSubnet2
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 323589f1-55e8-4d3f-b519-2b4bb65f8724
+  ec2Securitygroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupName: !Sub '${projectName}-ec2-sg'
+      GroupDescription: !Sub '${projectName}-ec2-sg'
+      Tags:
+        - Key: Name
+          Value: !Sub '${projectName}-ec2-sg'
+      VpcId: !Ref vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '8080'
+          SourceSecurityGroupId: !Ref albSecuritygroup
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: adb68e56-079b-4bca-8df0-043423841b88
+  albSecuritygroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupName: !Sub '${projectName}-alb-sg'
+      GroupDescription: !Sub '${projectName}-alb-sg'
+      Tags:
+        - Key: Name
+          Value: !Sub '${projectName}-alb-sg'
+      VpcId: !Ref vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: d262282c-7c11-4eb4-9cbc-489bc9ca49a0
+  frontendTargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      Name: !Sub '${projectName}-frontend-tg'
+      Port: 80
+      Protocol: HTTP
+      VpcId: !Ref vpc
+      Targets:
+        - Id: !Ref ec2onDocker
+          Port: 8080
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 5a0c65e3-60c9-4cad-b0cb-d2d6d4fb4c9b
+  publicAlb:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Name: !Sub '${projectName}-public-alb'
+      Scheme: internet-facing
+      Subnets:
+        - !Ref publicSubnet1
+        - !Ref publicSubnet2
+      Tags:
+        - Key: Name
+          Value: !Sub '${projectName}-public-alb'
+      Type: application
+      SecurityGroups:
+        - !Ref albSecuritygroup
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 32bcad2a-35c8-4485-be5e-6ac7fba64703
+  publiclistnener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref frontendTargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref publicAlb
+      Port: 80
+      Protocol: HTTP
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 354715ba-3b93-4267-8d6d-2cd41c542839
+  ec2onDocker:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      AvailabilityZone: us-east-2a
+      ImageId: ami-04fcd96153cb57194
+      InstanceType: t3a.large
+      KeyName: !Ref EC2KeyPair
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeType: gp2
+            VolumeSize: 8
+      SecurityGroupIds:
+        - !Ref ec2Securitygroup
+      SubnetId: !Ref publicSubnet1
+      Tags:
+        - Key: Name
+          Value: !Sub '${projectName}-ec2'
+      UserData:
+        'Fn::Base64': |
+          #!/bin/bash 
+          yum update -y
+          yum install -y docker git 
+          systemctl enable docker
+          service docker start
+          sudo docker run -it --rm -p 8080:8080 --name tomcat tomcat &
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: acb86e96-58d7-4c71-bf9b-5f61bbe258ae
+Metadata:
+  'AWS::CloudFormation::Designer':
+    d707b83f-d876-4ad0-9d08-0948d2980345:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: -1700
+        'y': 460
+      z: 0
+      embeds: []
+    2a28383d-e13b-4d9c-ba8e-49f22a0eb5df:
+      size:
+        width: 690
+        height: 600
+      position:
+        x: -1710
+        'y': -170
+      z: 1
+      embeds:
+        - d262282c-7c11-4eb4-9cbc-489bc9ca49a0
+        - adb68e56-079b-4bca-8df0-043423841b88
+        - ea36478e-bd35-434b-9bf0-fbbddeb48a60
+        - 10ecf055-e2ac-4122-a431-b3aa5aed7620
+        - 5660af47-8c08-4c3d-811a-99c81288b017
+        - 5a0c65e3-60c9-4cad-b0cb-d2d6d4fb4c9b
+        - 32bcad2a-35c8-4485-be5e-6ac7fba64703
+        - 354715ba-3b93-4267-8d6d-2cd41c542839
+    d262282c-7c11-4eb4-9cbc-489bc9ca49a0:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: -1470
+        'y': 190
+      z: 2
+      parent: 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+      embeds: []
+      iscontainedinside:
+        - 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+        - 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+    adb68e56-079b-4bca-8df0-043423841b88:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: -1350
+        'y': 190
+      z: 2
+      parent: 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+      embeds: []
+      iscontainedinside:
+        - 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+        - 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+    ea36478e-bd35-434b-9bf0-fbbddeb48a60:
+      size:
+        width: 240
+        height: 240
+      position:
+        x: -1380
+        'y': -110
+      z: 2
+      parent: 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+      embeds:
+        - 1a99ef3f-6d06-4d50-8434-9683d3a8db03
+      iscontainedinside:
+        - 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+        - 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+    1a99ef3f-6d06-4d50-8434-9683d3a8db03:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: -1350
+        'y': -50
+      z: 3
+      parent: ea36478e-bd35-434b-9bf0-fbbddeb48a60
+      embeds: []
+      isassociatedwith:
+        - d707b83f-d876-4ad0-9d08-0948d2980345
+      iscontainedinside:
+        - ea36478e-bd35-434b-9bf0-fbbddeb48a60
+        - ea36478e-bd35-434b-9bf0-fbbddeb48a60
+    10ecf055-e2ac-4122-a431-b3aa5aed7620:
+      size:
+        width: 150
+        height: 150
+      position:
+        x: -1680
+        'y': 190
+      z: 2
+      parent: 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+      embeds: []
+      iscontainedinside:
+        - 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+        - 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+    323589f1-55e8-4d3f-b519-2b4bb65f8724:
+      source:
+        id: ea36478e-bd35-434b-9bf0-fbbddeb48a60
+      target:
+        id: 10ecf055-e2ac-4122-a431-b3aa5aed7620
+      z: 2
+    5660af47-8c08-4c3d-811a-99c81288b017:
+      size:
+        width: 240
+        height: 240
+      position:
+        x: -1680
+        'y': -110
+      z: 2
+      parent: 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+      embeds:
+        - acb86e96-58d7-4c71-bf9b-5f61bbe258ae
+      iscontainedinside:
+        - 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+        - 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+    acb86e96-58d7-4c71-bf9b-5f61bbe258ae:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: -1650
+        'y': -50
+      z: 3
+      parent: 5660af47-8c08-4c3d-811a-99c81288b017
+      embeds: []
+      isassociatedwith:
+        - adb68e56-079b-4bca-8df0-043423841b88
+      iscontainedinside:
+        - 5660af47-8c08-4c3d-811a-99c81288b017
+        - 5660af47-8c08-4c3d-811a-99c81288b017
+    5a0c65e3-60c9-4cad-b0cb-d2d6d4fb4c9b:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: -1230
+        'y': 190
+      z: 2
+      parent: 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+      embeds: []
+      iscontainedinside:
+        - 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+        - 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+    32bcad2a-35c8-4485-be5e-6ac7fba64703:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: -1350
+        'y': 360
+      z: 2
+      parent: 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+      embeds: []
+      isassociatedwith:
+        - d262282c-7c11-4eb4-9cbc-489bc9ca49a0
+      iscontainedinside:
+        - 5660af47-8c08-4c3d-811a-99c81288b017
+        - 10ecf055-e2ac-4122-a431-b3aa5aed7620
+    354715ba-3b93-4267-8d6d-2cd41c542839:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: -1230
+        'y': 360
+      z: 2
+      parent: 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+      embeds: []
+      isassociatedwith:
+        - 32bcad2a-35c8-4485-be5e-6ac7fba64703
+    740f3d29-6d90-4616-9900-f7803e4949e1:
+      source:
+        id: ea36478e-bd35-434b-9bf0-fbbddeb48a60
+      target:
+        id: 5660af47-8c08-4c3d-811a-99c81288b017
+      z: 2
+    98023e76-a49c-4685-9963-6548e8af3092:
+      source:
+        id: 2a28383d-e13b-4d9c-ba8e-49f22a0eb5df
+      target:
+        id: d707b83f-d876-4ad0-9d08-0948d2980345
+      z: 1
