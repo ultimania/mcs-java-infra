@@ -19,5 +19,6 @@ https://cf-templates-1l7kgoixmy3jv-us-east-2.s3.us-east-2.amazonaws.com/2020272c
 
 # postgreSQLログイン
 ```
-docker exec -it postgres psql -U postgres
+# docker exec -it postgres hostname -i
+# docker exec -it postgres psql -U postgres
 ```
