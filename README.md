@@ -27,7 +27,10 @@ https://cf-templates-1l7kgoixmy3jv-us-east-2.s3.us-east-2.amazonaws.com/2020272c
 # tomcat設定
 ```
 # docker exec -it tomcat sh
-cat <<EOF > conf/tomcat-users.xml
+# mv webapps webapps.org
+# mv webapps.dist webapps
+
+# cat <<EOF > conf/tomcat-users.xml
 <tomcat-users>
   <role rolename="manager-gui"/>
   <role rolename="admin-gui"/>
@@ -36,7 +39,7 @@ cat <<EOF > conf/tomcat-users.xml
 EOF
 
 
-cat <<EOF > webapps/manager/META-INF/context.xml
+# cat <<EOF > webapps/manager/META-INF/context.xml
 <!--
   Licensed to the Apache Software Foundation (ASF) under one or more
   contributor license agreements.  See the NOTICE file distributed with
