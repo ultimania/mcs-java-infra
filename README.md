@@ -1,6 +1,17 @@
-# recuruit_config
+# Javaアプリケーション基盤 on AWS & Docker
 
-recuruitのconfig用リポジトリ
+config用リポジトリ
+
+## リポジトリ構成
+
+|階層|内容|使用ツール|
+|---|---|---|
+|aws|AWSでのプロビジョニング構成ファイル|CloudFormation|
+|gitlab-runner|gitlab-runnerを使用する場合の構成ファイル|Gitlab CI/CD|
+|tomcat|Tomcatの構成ファイル（設定変更対象のみ）|TomcatManager|
+|README.md|本ファイル。本リポジトリの取り扱い説明書||
+|docker-compose.yml|Javaアプリケーション基盤を構成するコンテナ構成ファイル|docker-compose|
+
 
 ## 各種アクセス
 
