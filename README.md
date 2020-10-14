@@ -32,11 +32,30 @@ $ sudo docker-compose up -d
 
 ### postgreSQLログイン（DBメンテナンス用）
 ```
-$ sudo docker exec -it postgres hostname -i
 $ sudo docker exec -it postgres psql -U postgres
 ```
 
-# tomcat設定（メンテナンス用、コンテナ再作成時）
+### postgreSQLログ確認
+```
+$ sudo docker logs tomcat
+```
+
+### tomcatログイン（メンテナンス用）
+```
+$ sudo docker exec -it tomcat sh
+```
+
+### tomcatサービス再起動
+```
+$ sudo docker restart tomcat
+```
+
+### tomcatログ確認
+```
+$ sudo docker logs tomcat
+```
+
+### tomcat設定（コンテナ再作成時）
 `username`と`password`は任意に設定
 ```
 $ sudo docker exec -it tomcat sh
@@ -49,7 +68,10 @@ $ sudo docker exec -it tomcat sh
   <user username="********" password="************" roles="manager-gui,admin-gui"/>
 </tomcat-users>
 EOF
+```
 
+### tomcat設定（EC2作成後初回のみ）
+```
 # cat <<EOF > webapps/manager/META-INF/context.xml
 <!--
   Licensed to the Apache Software Foundation (ASF) under one or more
@@ -75,9 +97,11 @@ EOF
   <Manager sessionAttributeValueClassNameFilter="java\.lang\.(?:Boolean|Integer|Long|Number|String)|org\.apache\.catalina\.filters\.CsrfPreventionFilter$LruCache(?:$1)?|java\.util\.(?:Linked)?HashMap"/>
 </Context>
 EOF
+
+# exit
 ```
 
 ### コンテナ環境削除
 ```
-# sudo docker-compose down
+$ sudo docker-compose down
 ```
