@@ -179,7 +179,7 @@ Resources:
       AvailabilityZone: us-east-2a
       ImageId: ami-04fcd96153cb57194
       InstanceType: t3a.large
-      KeyName: !Ref EC2KeyPair
+      KeyName: !Ref tomcat
       BlockDeviceMappings:
         - DeviceName: /dev/xvda
           Ebs:

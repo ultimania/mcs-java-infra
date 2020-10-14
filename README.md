@@ -2,42 +2,53 @@
 
 recuruitのconfig用リポジトリ
 
+## 各種アクセス
 
-# アプリアクセス（ルートＵＲＬ）
-http://dockeronec2-public-alb-816863126.us-east-2.elb.amazonaws.com
+|サービス|URL|
+|---|---|
+|tomcat|http://dockeronec2-public-alb-816863126.us-east-2.elb.amazonaws.com|
+|apache|http://dockeronec2-public-alb-816863126.us-east-2.elb.amazonaws.com:10080|
 
-# プロビジョニング（ＡＷＳ基盤）
-https://cf-templates-1l7kgoixmy3jv-us-east-2.s3.us-east-2.amazonaws.com/2020272cWa-template118v36ullhkj
 
-# コンテナ構築
+## プロビジョニング（ＡＷＳ基盤）
+`aws/cloud_formation_template.yml`をデプロイ
+
+## セットアップ手順（EC2プロビジョニング後）
+以降はEC2にログイン後に実施
+
+### DockerCompose導入
+```
+$ sudo curl -L https://github.com/docker/compose/releases/download/1.27.2/docker-compose-`uname -s`-`uname -m` -o /usr/bin/docker-compose
+$ sudo chmod +x /usr/bin/docker-compose
+$ sudo docker-compose --version
+```
+
+### コンテナ環境デプロイ
+`docker-compose.yml`をカレントディレクトリに用意
 
 ```
-# docker run -it --rm -p 8080:8080 --name tomcat tomcat &
-# docker run -d -v /opt/jenkins_home:/var/jenkins_home -p 8081:8080 -p 50000:50000 --name jenkins jenkins/jenkins:lts &
-# docker run -d --name postgres -e POSTGRES_PASSWORD=qwer1234 -e PGDATA=/var/lib/postgresql/data/pgdata -v /opt/postgresql:/var/lib/postgresql postgres
-# docker run --name mariadb -e MYSQL_ROOT_PASSWORD=qwer1234 mariadb &
+$ sudo docker-compose up -d
 ```
 
-# postgreSQLログイン
+### postgreSQLログイン（DBメンテナンス用）
 ```
-# docker exec -it postgres hostname -i
-# docker exec -it postgres psql -U postgres
+$ sudo docker exec -it postgres hostname -i
+$ sudo docker exec -it postgres psql -U postgres
 ```
 
-# tomcat設定
+# tomcat設定（メンテナンス用、コンテナ再作成時）
+`username`と`password`は任意に設定
 ```
-# docker exec -it tomcat sh
-# mv webapps webapps.org
-# mv webapps.dist webapps
+$ sudo docker exec -it tomcat sh
+# cp -rp ./webapps.dist/* ./webapps/
 
 # cat <<EOF > conf/tomcat-users.xml
 <tomcat-users>
   <role rolename="manager-gui"/>
   <role rolename="admin-gui"/>
-  <user username="admin" password="asdfqwer1234" roles="manager-gui,admin-gui"/>
+  <user username="********" password="************" roles="manager-gui,admin-gui"/>
 </tomcat-users>
 EOF
-
 
 # cat <<EOF > webapps/manager/META-INF/context.xml
 <!--
@@ -64,6 +75,9 @@ EOF
   <Manager sessionAttributeValueClassNameFilter="java\.lang\.(?:Boolean|Integer|Long|Number|String)|org\.apache\.catalina\.filters\.CsrfPreventionFilter$LruCache(?:$1)?|java\.util\.(?:Linked)?HashMap"/>
 </Context>
 EOF
+```
 
-
+### コンテナ環境削除
+```
+# sudo docker-compose down
 ```
