@@ -48,10 +48,10 @@ $ sudo docker exec -it postgres psql -U postgres
 
 ### postgreSQLログ確認
 ```
-$ sudo docker logs tomcat
+$ sudo docker logs postgres
 ```
 
-### tomcatログイン（メンテナンス用）
+### tomcatコンテナログイン（メンテナンス用）
 ```
 $ sudo docker exec -it tomcat sh
 ```
